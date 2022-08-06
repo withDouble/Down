@@ -98,7 +98,9 @@ public class DownLayoutManager: NSLayoutManager {
                 let maxY = isLineEndOfBlock ? lineUsedRect.maxY + inset : lineUsedRect.maxY
                 let blockRect = CGRect(minX: minX, minY: minY, maxX: maxX, maxY: maxY).translated(by: origin)
 
-                context.fill(blockRect)
+                let path = CGPath(roundedRect: blockRect, cornerWidth: 6.0, cornerHeight: 6.0, transform: nil)
+                context.addPath(path)
+                context.fillPath()
             }
         }
     }
@@ -175,7 +177,10 @@ public class DownLayoutManager: NSLayoutManager {
     private func drawQuoteStripes(with context: CGContext, locations: [CGPoint], size: CGSize) {
         locations.forEach {
             let stripeRect = CGRect(origin: $0, size: size)
-            context.fill(stripeRect)
+            let radius = size.width / 2
+            let path = CGPath(roundedRect: stripeRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+            context.addPath(path)
+            context.fillPath()
         }
     }
 
