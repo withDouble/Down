@@ -175,9 +175,9 @@ public class DownLayoutManager: NSLayoutManager {
     }
 
     private func drawQuoteStripes(with context: CGContext, locations: [CGPoint], size: CGSize) {
-        locations.forEach {
-            let stripeRect = CGRect(origin: $0, size: size)
-            let radius = size.width / 2
+        locations.enumerated().forEach { i, location in
+            let stripeRect = CGRect(origin: location, size: size)
+            let radius = (i == 0) || (i == locations.count - 1) ? size.width / 2 : 0
             let path = CGPath(roundedRect: stripeRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
             context.addPath(path)
             context.fillPath()
