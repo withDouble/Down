@@ -149,6 +149,11 @@ public class DownLayoutManager: NSLayoutManager {
         context.strokePath()
     }
 
+    private struct QuoteSegment {
+        let locations: [CGPoint]
+        let size: CGSize
+    }
+
     private func drawQuoteStripeIfNeeded(in characterRange: NSRange, at origin: CGPoint) {
         guard let context = context else { return }
         push(context: context)
@@ -161,6 +166,11 @@ public class DownLayoutManager: NSLayoutManager {
 
             let glyphRangeOfQuote = self.glyphRange(forCharacterRange: quoteRange, actualCharacterRange: nil)
 
+
+
+
+            var segments: [QuoteSegment] = []
+
             enumerateLineFragments(forGlyphRange: glyphRangeOfQuote) { lineRect, _, container, _, _ in
                 let locations = attr.locations.map {
                     CGPoint(x: $0 + container.lineFragmentPadding, y: 0)
@@ -169,19 +179,52 @@ public class DownLayoutManager: NSLayoutManager {
                 }
 
                 let stripeSize = CGSize(width: attr.thickness, height: lineRect.height)
-                self.drawQuoteStripes(with: context, locations: locations, size: stripeSize)
+                segments.append(QuoteSegment(locations: locations, size: stripeSize))
             }
+
+            self.drawQuoteStripeSegments(with: context, segments: segments)
         }
     }
 
-    private func drawQuoteStripes(with context: CGContext, locations: [CGPoint], size: CGSize) {
-        locations.enumerated().forEach { i, location in
-            let stripeRect = CGRect(origin: location, size: size)
-            let radius = (i == 0) || (i == locations.count - 1) ? size.width / 2 : 0
-            let path = CGPath(roundedRect: stripeRect, cornerWidth: radius, cornerHeight: radius, transform: nil)
-            context.addPath(path)
-            context.fillPath()
+    private func drawQuoteStripeSegments(with context: CGContext, segments: [QuoteSegment]) {
+        segments.enumerated().forEach { i, segment in
+            segment.locations.forEach { location in
+                let stripeRect = CGRect(origin: location, size: segment.size)
+                let radius = segment.size.width / 2
+                let path: CGPath
+                #if canImport(UIKit)
+
+                switch i {
+                    // Top segment
+                case 0:
+                    let bezier = UIBezierPath(
+                        roundedRect: stripeRect,
+                        byRoundingCorners: [.topLeft, .topRight],
+                        cornerRadii: .init(width: radius, height: radius)
+                    )
+                    path = bezier.cgPath
+                    // Bottom segment
+                case segments.count - 1:
+                    let bezier = UIBezierPath(
+                        roundedRect: stripeRect,
+                        byRoundingCorners: [.bottomLeft, .bottomRight],
+                        cornerRadii: .init(width: radius, height: radius)
+                    )
+                    path = bezier.cgPath
+                    // Middle segment
+                default:
+                    path = CGPath(rect: stripeRect, transform: nil)
+                }
+
+                #elseif canImport(AppKit)
+                path = CGPath(rect: stripeRect, transform: nil)
+                #endif
+
+                context.addPath(path)
+                context.fillPath()
+            }
         }
+
     }
 
     private func glyphRanges(for key: NSAttributedString.Key,
